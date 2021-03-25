@@ -15,7 +15,8 @@ const modalCart = document.querySelector('#modal-cart');
 //const modalClose = document.querySelector('.modal-close');
 
 const openModal = () => {
-	modalCart.classList.add('show')
+	cart.renderCart();
+	modalCart.classList.add('show');
 };
 const closeModal = () => {
 	modalCart.classList.remove('show')
@@ -31,9 +32,9 @@ modalCart.addEventListener('click', e => {
 
 // smooth scroll
 
-(function() {
+(function () {
 	const scrollLinks = document.querySelectorAll('a.scroll-link');
-	
+
 	for (const scrollLink of scrollLinks) {
 		scrollLink.addEventListener('click', e => {
 			e.preventDefault();
@@ -61,7 +62,14 @@ const getProducts = async () => {
 	return await result.json();
 }
 
-const createCard = ({ label, name, img, description, id, price }) => {
+const createCard = ({
+	label,
+	name,
+	img,
+	description,
+	id,
+	price
+}) => {
 	const card = document.createElement('div');
 	card.className = 'col-lg-3 col-sm-6';
 
@@ -96,11 +104,11 @@ btnMore.addEventListener('click', e => {
 
 const filterCards = (field, value) => {
 	getProducts().then(data => {
-		const result = data.filter(item => {
-			return item[field] === value;
-		});
-		return result;
-	})
+			const result = data.filter(item => {
+				return item[field] === value;
+			});
+			return result;
+		})
 		.then(renderCards);
 }
 
@@ -118,6 +126,7 @@ navItem.forEach(link => {
 });
 
 // 
+
 const btnViewProducts = document.querySelectorAll('button.view-products');
 btnViewProducts.forEach(btn => {
 	const category = btn.dataset.category;
@@ -129,4 +138,128 @@ btnViewProducts.forEach(btn => {
 			block: 'start'
 		});
 	});
+});
+
+// cart table
+
+const cartTableGoods = document.querySelector('.cart-table__goods');
+const cartTableTotal = document.querySelector('.cart-table__total');
+
+const cart = {
+	cartProducts: [{
+			id: '099',
+			name: 'dior watch',
+			price: 999,
+			count: 2,
+		},
+		{
+			id: '090',
+			name: 'dior watch gold',
+			price: 999,
+			count: 1,
+		}
+	],
+	renderCart() {
+		cartTableGoods.textContent = '';
+		this.cartProducts.forEach(({
+			id,
+			name,
+			price,
+			count
+		}) => {
+			const trItem = document.createElement('tr');
+			trItem.className = 'cart-item';
+			trItem.dataset.id = id;
+
+			trItem.innerHTML = `
+				<td>${name}</td>
+				<td>${price} $</td>
+				<td>
+					<button class="cart-btn-minus"> - </button>
+				</td>
+				<td> ${count} </td>
+				<td>
+					<button class="cart-btn-plus"> + </button>
+				</td>
+				<td> ${price * count} $ </td>
+				<td>
+					<button class="cart-btn-delete"> x </button></td>
+			`;
+			cartTableGoods.append(trItem);
+		});
+
+		const totalPrice = this.cartProducts.reduce((sum, item) => {
+			return sum + item.price * item.count;
+		}, 0);
+		cartTableTotal.textContent = totalPrice + '$';
+	},
+	deleteProduct(id) {
+		this.cartProducts = this.cartProducts.filter(item => id !== item.id);
+		this.renderCart();
+	},
+	minusProduct(id) {
+		for (const item of this.cartProducts) {
+			if (item.id === id) {
+				if (item.count === 1) {
+					this.deleteProduct(id);
+				} else {
+
+					item.count--;
+				}
+				break
+			}
+		}
+		this.renderCart();
+	},
+	plusProduct(id) {
+		for (const item of this.cartProducts) {
+			if (item.id === id) {
+				item.count++;
+				break
+			}
+		}
+		this.renderCart();
+	},
+	addCartProducts(id) {
+		const productItem = this.cartProducts.find(item => item.id === id);
+		if (productItem) {
+			this.plusProduct(id);
+		} else {
+			getProducts()
+				.then(data => data.find(item => item.id === id))
+				.then(({ id, name, price }) => {
+					this.cartProducts.push({
+						id,
+						name,
+						price,
+						count: 1
+					});
+				});
+		}
+	}
+}
+
+document.body.addEventListener('click', e => {
+	const addToCart = e.target.closest('.add-to-cart');
+	if (addToCart) {
+		cart.addCartProducts(addToCart.dataset.id);
+	}
+
+});
+
+cartTableGoods.addEventListener('click', e => {
+	const target = e.target;
+
+	if (target.tagName === 'BUTTON') {
+		const id = target.closest('.cart-item').dataset.id;
+		if (target.classList.contains('cart-btn-delete')) {
+			cart.deleteProduct(id);
+		}
+		if (target.classList.contains('cart-btn-minus')) {
+			cart.minusProduct(id);
+		}
+		if (target.classList.contains('cart-btn-plus')) {
+			cart.plusProduct(id);
+		}
+	}
 });
