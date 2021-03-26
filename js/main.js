@@ -146,19 +146,7 @@ const cartTableGoods = document.querySelector('.cart-table__goods');
 const cartTableTotal = document.querySelector('.cart-table__total');
 
 const cart = {
-	cartProducts: [{
-			id: '099',
-			name: 'dior watch',
-			price: 999,
-			count: 2,
-		},
-		{
-			id: '090',
-			name: 'dior watch gold',
-			price: 999,
-			count: 1,
-		}
-	],
+	cartProducts: [],
 	renderCart() {
 		cartTableGoods.textContent = '';
 		this.cartProducts.forEach(({
@@ -236,6 +224,9 @@ const cart = {
 					});
 				});
 		}
+	},
+	cleanCart() {
+		this.cartProducts.length = 0;
 	}
 }
 
@@ -262,4 +253,35 @@ cartTableGoods.addEventListener('click', e => {
 			cart.plusProduct(id);
 		}
 	}
+});
+
+
+// form
+const modalForm = document.querySelector('.modal-form');
+
+// server
+const postData = dataUser => fetch('server.php', {
+	method: 'POST',
+	body: dataUser
+});
+
+modalForm.addEventListener('submit', e => {
+	e.preventDefault();
+	const formData = new FormData(modalForm);
+	formData.append('order', JSON.stringify(cart.cartProducts));
+	postData(formData)
+		.then(response => {
+			if (!response.ok) {
+				throw new Error(response.status);
+			}
+			alert('Ваш заказ успешно отправлен. С вами свяжутся в ближайшее время.');
+		})
+		.catch(err => {
+			alert('Произошла ошибка. Повторите попытку позже.');
+		})
+		.finally(() => {
+			closeModal();
+			modalForm.reset();
+			cart.cleanCart();
+		})
 });
